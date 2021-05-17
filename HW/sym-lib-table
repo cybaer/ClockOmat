@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name MCP23S08)(type Legacy)(uri ${KIPRJMOD}/MCP23S08.lib)(options "")(descr ""))
+  (lib (name mcp23s08-xso)(type Legacy)(uri ${KIPRJMOD}/mcp23s08-xso.lib)(options "")(descr ""))
+)

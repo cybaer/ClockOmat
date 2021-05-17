@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP MCP23S08-xSO
+D 8-bit I/O expander, SPI, interrupts, SOIC-18
+K SPI parallel port expander
+F http://ww1.microchip.com/downloads/en/DeviceDoc/MCP23008-MCP23S08-Data-Sheet-20001919F.pdf
+$ENDCMP
+#
+#End Doc Library
