@@ -1,3 +1,6 @@
 [submodule "SW/avrlib"]
 	path = SW/avrlib
 	url = git@github.com:cybaer/avril.git
+[submodule "SW/lib"]
+	path = SW/lib
+	url = git@github.com:cybaer/lib.git
