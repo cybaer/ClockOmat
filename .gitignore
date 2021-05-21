@@ -1,0 +1,10 @@
+.settings
+.cproject
+.project
+*.xml
+*.bak
+*.*bak
+*backup*
+*rescue*
+*cache*
+SW/build/
