@@ -14,7 +14,7 @@
 
 VERSION        = 0.1
 MCU_NAME       = 328
-F_CPU          = 20000000
+F_CPU          = 16000000
 TARGET         = ClockOmat
 PACKAGES       = avrlib avrlib/devices ./
 
@@ -26,7 +26,7 @@ SYSEX_FLAGS    = --page_size=64 --device_id=3
 # -DPOLY_SEQUENCER_FIRMWARE
 # -DUSE_HD_CLOCK
 # -DUSE_SH_SEQUENCER
-EXTRA_DEFINES  = -DDISABLE_DEFAULT_UART_RX_ISR -DUSE_SH_SEQUENCER
+EXTRA_DEFINES  = -std=c++14
 
 LFUSE          = ff
 HFUSE          = d9
