@@ -1,7 +1,7 @@
 /*
  * ui.cpp
  *
- *  Created on: 21.05.2021
+ *  Created on: 21.08.2021
  *      Author: cybaer
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,58 +20,197 @@
 #include "ui.h"
 #include "clock.h"
 
-//#include "med5.h"
+Ui::Ui()
+: m_NewClock(false)
+, m_Xcrement(0)
+, m_AdcChannel()
+, m_Button(0)
+, m_Stop(false)
+, m_BPM(120)
+, m_State(&CInitState::getInstance())
+{}
 
 void Ui::init()
 {
+  m_Stop = false;
   Adc::StartConversion(m_AdcChannel);
+  setState(CClockState::getInstance());
 }
+
 void Ui::poll()
 {
+  m_Xcrement = Encoder::Read(); 
+  if (Adc::ready())
+  {
+    auto button = Buttons::getButton();
+    if(m_Button == 0 && button == 1) m_Stop = !m_Stop;
+    if(m_Button == 0 && button == 2) 
+    {
+      m_Stop = true;
+      dividerFarm.reset();
+    }
+    
+    m_Button = button;
+    Adc::StartConversion(AdcChannelButtons);
+  }
+}
+
+void Ui::doEvents()
+{
+  if(m_Xcrement != 0) m_State->onXcrement(*this, m_Xcrement);
+  if(Encoder::clicked()) m_State->onClick(*this);
+
+  clock.update(m_BPM); 
   Display::Refresh();
 }
-void Ui::doEvents()
+
+void Ui::update()
 {
   if(ResetIn::isTriggered())
   {
-    DividerFarm::reset();
+    dividerFarm.reset();
   }
   if(ClockIn::isTriggered())
   {
     m_Stop = false;
     (void)clock.ClockInEdge();
   }
-
-  if (Adc::ready())
+  if(m_NewClock) 
   {
-    m_204 = Buttons::getValue();
-    Adc::StartConversion(AdcChannelButtons);
+    m_NewClock = false;
+    if(!m_Stop)
+    {
+      bool clk = clock.getClock();
+      Output_7::set_value(clk);
+      dividerFarm.clock(clk);
+    }
   }
 }
 
 void Ui::onClock()
 {
-  bool clk = m_Stop ? false : clock.getClock();
-  bool out1 = false;
-  DividerFarm::clock(clk);
-  out1 = clk;
-  
-  Output_1::set_value(out1);
-  
- // Output_5::set_value(Div_2.getValue());
- // Output_6::set_value(Div_4.getValue());
- // Output_7::set_value(Div_8.getValue());
-  
+  m_NewClock = true;
 }
 
-Divider::Divider(uint8_t divider)
-: m_Divider(divider)
-, m_Counter(0)
-, m_OldValue(false)
-, m_Output(false)
+int16_t Ui::setBPM(int8_t xcr)
 {
-  DividerFarm::registerDivider(this);
+  m_BPM += xcr;
+  if(m_BPM < 30) m_BPM = 30;
+  if(m_BPM > 300) m_BPM = 300;
+  return m_BPM;
 }
 
-Divider* DividerFarm::m_Divider[MaxDivider];
-int8_t DividerFarm::m_Counter=0;
+
+// ***** State Machine *****
+
+void Ui::CClockState::onEntry(Ui& context) const
+{
+  Display::Print("Clc");
+}
+
+void Ui::CClockState::onExit(Ui& context) const
+{
+
+}
+
+void Ui::CClockState::onClick(Ui& context) const
+{
+  context.setState(CClockEditState::getInstance());
+}
+
+void Ui::CClockState::onXcrement(Ui& context, int8_t xcrement) const
+{
+  if(xcrement > 0)
+  {
+    (void)dividerFarm.setFirstDivider();
+    context.setState(CDividerState::getInstance());
+  }
+}
+
+//-------------------------
+
+void Ui::CClockEditState::onEntry(Ui& context) const
+{
+  Display::Print(context.getBPM());
+}
+
+void Ui::CClockEditState::onExit(Ui& context) const
+{
+
+}
+void Ui::CClockEditState::onClick(Ui& context) const
+{
+  context.setState(CClockState::getInstance());
+}
+
+void Ui::CClockEditState::onXcrement(Ui& context, int8_t xcrement) const
+{
+  int16_t bpm = context.setBPM(xcrement);
+  Display::Print(bpm);
+}
+
+//-------------------------
+
+void Ui::CDividerState::onEntry(Ui& context) const
+{
+  Display::Print("Ch", dividerFarm.getDividerNo());
+}
+
+void Ui::CDividerState::onExit(Ui& context) const
+{
+
+}
+
+void Ui::CDividerState::onClick(Ui& context) const
+{
+  context.setState(CDividerEditState::getInstance());
+}
+
+void Ui::CDividerState::onXcrement(Ui& context, int8_t xcrement) const
+{
+  if(xcrement > 0)
+  {
+    dividerFarm.setNextDivider();
+    Display::Print("Ch", dividerFarm.getDividerNo());
+  }
+  if(xcrement < 0)
+  {
+    if(dividerFarm.getDividerNo() > 1)
+    {
+      dividerFarm.setPrevDivider();
+      Display::Print("Ch", dividerFarm.getDividerNo());
+    }
+    else
+    {
+      context.setState(CClockState::getInstance());
+    }
+  }
+}
+
+//-------------------------
+
+void Ui::CDividerEditState::onEntry(Ui& context) const
+{
+  Display::Print(dividerFarm.getActualDivider().getDivider());
+}
+
+void Ui::CDividerEditState::onExit(Ui& context) const
+{
+  
+}
+
+void Ui::CDividerEditState::onClick(Ui& context) const
+{
+  context.setState(CDividerState::getInstance());
+}
+
+void Ui::CDividerEditState::onXcrement(Ui& context, int8_t xcrement) const
+{
+  Divider& div = dividerFarm.getActualDivider();
+  auto idx = div.getDividerIndex();
+  /// ToDo: Begrenzung einbauen!
+  idx += xcrement;
+  
+  auto val = div.setDividerIndex(idx);
+  Display::Print(val);
+}

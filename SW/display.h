@@ -1,45 +1,32 @@
-// Copyright 2012 Emilie Gillet.
-//
-// Author: Emilie Gillet (emilie.o.gillet@gmail.com)
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-//
-// See http://creativecommons.org/licenses/MIT/ for more information.
-//
-// -----------------------------------------------------------------------------
-//
-// Driver for 4x14-segments display.
+/*
+ *  Created on: 21.08.2021
+ *      Author: cybaer
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
-#ifndef DRIVERS_DISPLAY_H_
-#define DRIVERS_DISPLAY_H_
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
 
-
+#include "stdio.h"
 #include "avrlib/base.h"
 #include "7_SegmentCharacter.h"
-
 
 typedef void (*setFct)(uint8_t);
 
 static const int8_t BrightnessLevels = 4;
 
-
-static const auto a = A<0x20, 0x80, 0x01, 0x08, 0x10, 0x40, 0x02>(); 
+extern const uint8_t* LUT_7Seg_Character;
 
 template<typename GPIO, int8_t Digits, setFct setD1, setFct setD2, setFct setD3>
 class Display_7_Seg
@@ -47,9 +34,7 @@ class Display_7_Seg
  public:
   static inline void Init()
   {
-    m_Buffer[0] = '7';
-    m_Buffer[1] = '6';
-    m_Buffer[2] = 'E';
+    
     m_ActivePosition = 0;
   }
 
@@ -60,7 +45,7 @@ class Display_7_Seg
       DigitIO[m_ActivePosition](false);
       m_ActivePosition = (m_ActivePosition + 1) % Digits;
       //writeDigit(/*chars[static_cast<uint8_t>*/(m_Buffer[m_ActivePosition])]);
-      writeDigit(a.arr[m_Buffer[m_ActivePosition]]);
+      writeDigit(LUT_7Seg_Character[m_Buffer[m_ActivePosition]]);
 
       DigitIO[m_ActivePosition](true);
     /*} else 
@@ -74,6 +59,23 @@ class Display_7_Seg
   static inline void Print(const char* s)
   {
     strncpy(m_Buffer, s, Digits);
+  }
+
+  static inline void Print(const uint16_t v)
+  {
+    if(v < 1000)
+    {
+      char buf[4];
+      sprintf(buf, "%3u", v);
+      Print(buf);
+    }
+    else Print("Err");
+  }
+
+  static inline void Print(const char* s, const uint8_t v)
+  {
+    Print(v);
+    strncpy(m_Buffer, s, Digits-1);
   }
 
   static inline char* mutable_buffer() { return m_Buffer; }

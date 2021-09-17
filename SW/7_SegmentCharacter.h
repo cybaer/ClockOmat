@@ -1,3 +1,20 @@
+/*
+ *  Created on: 21.08.2021
+ *      Author: cybaer
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "avrlib/base.h"
 
 static const uint8_t N = 128;
@@ -133,13 +150,13 @@ constexpr uint8_t chars[N] = {
    0x00,   //0x7F 'DEL'
 };
 
-
+// Bitposition of every segment
 template<uint8_t a, uint8_t b, uint8_t c, uint8_t d, uint8_t e, uint8_t f, uint8_t g>
-struct A 
+struct EncodedCharacters 
 {
-  uint8_t Segments[7] = {a, b, c, d, e, f, g};
+  uint8_t Segments[7] = {0x1 << a, 0x1 << b, 0x1 << c, 0x1 << d, 0x1 << e, 0x1 << f, 0x1 << g};
   
-  constexpr A() : arr()
+  constexpr EncodedCharacters() : arr()
   {
     for(auto i=0; i!=N; ++i)
     {

@@ -1,7 +1,5 @@
 /*
- * clock.cpp
- *
- *  Created on: 21.05.2021
+ *  Created on: 21.08.2021
  *      Author: cybaer
  *
  * This program is free software: you can redistribute it and/or modify
@@ -14,22 +12,10 @@
  * GNU General Public License for more details.
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
-#include "clock.h"
 
-Clock clock;
-static const int32_t BPM2HZ = 60L;
-bool Clock::m_Running = true;
-volatile uint16_t Clock::m_TickCount = 0;
-uint16_t Clock::m_OldTick = 0;
-int8_t Clock::m_DeltaTick = 0;
+#include "HardwareConfig.h"
 
-uint16_t Clock::m_Interval = (F_CPU / PRESCALER_VALUE / static_cast<uint32_t>(INTERVALL_TICKS) / static_cast<uint32_t>(60)) * BPM2HZ;
-
-void Clock::update(uint16_t bpm, uint8_t multiplier, uint8_t divider)
-{
-  
-  int32_t base_tick_duration = (F_CPU / PRESCALER_VALUE / 2 /static_cast<uint32_t>(INTERVALL_TICKS)) * (BPM2HZ/4) / static_cast<uint32_t>(bpm) ;
-  m_Interval = base_tick_duration;
-}
+const uint8_t* LUT_7Seg_Character = encChar.arr;

@@ -27,6 +27,7 @@
 #include "lib/ui/EdgeTrigger.h"
 #include "lib/ui/analogSwitch.h"
 #include "avrlib/devices/mcp23s08.h"
+#include "avrlib/devices/rotary_encoder.h"
 #include "display.h"
 
 // __Compiler Bug__
@@ -52,26 +53,35 @@ typedef Inverter<Gpio<PortD, 7> > Digit_1;
 typedef Inverter<Gpio<PortB, 0> > Digit_2;
 typedef Inverter<Gpio<PortB, 1> > Digit_3;
 
+constexpr auto encChar = EncodedCharacters<5, 7, 0, 3, 4, 6, 1>(); 
+
 typedef Display_7_Seg<portExtender, 3, Digit_1::set_value, Digit_2::set_value, Digit_3::set_value> Display;
 
-
-
+// Inputs
 typedef EdgeTrigger<Gpio<PortD, 2>, 0> ClockIn;
 typedef EdgeTrigger<Gpio<PortC, 4>, 1> ResetIn;
 
-
+// Outputs
 typedef Inverter<Gpio<PortC, 1> > Output_7;
 typedef Inverter<Gpio<PortC, 3> > Output_6;
 typedef Inverter<Gpio<PortC, 5> > Output_5;
-typedef Inverter<Gpio<PortB, 5> > Output_4;
+typedef Inverter<Gpio<PortD, 3> > Output_4;
 typedef Inverter<Gpio<PortC, 2> > Output_3;
 typedef Inverter<Gpio<PortD, 0> > Output_2;
 typedef Inverter<Gpio<PortD, 1> > Output_1;
 
+// Rotary Encoder
+typedef Gpio<PortD, 6> PinA;
+typedef Gpio<PortD, 5> PinB;
+typedef Gpio<PortB, 2> PinS;
+
+typedef RotaryEncoder<PinB, PinA, PinS> Encoder;
+
+// ADC for buttons
 extern Adc adc;
 static const uint8_t AdcChannelButtons = 7;
 
-typedef AnalogSwitch<Adc, AdcChannelButtons, 3> Buttons;
+typedef AnalogBinSwitch<Adc, AdcChannelButtons, 33, 100, 100, 100> Buttons;
 
 inline void initInputs(void)
 {
@@ -101,13 +111,11 @@ inline void initOutputs(void)
   Digit_2::set_value(false);
   Digit_3::set_mode(DIGITAL_OUTPUT);
   Digit_3::set_value(false);
- 
 }
 
 inline void initAnalogIn(void)
 {
   adc.Init();
-  Buttons::init();
 }
 
 inline void initHW(void)
@@ -116,11 +124,22 @@ inline void initHW(void)
   initOutputs();
   initAnalogIn();
 
+  Encoder::Init();  // must be initialized before spi_master (use of SS pin (14))
+
   spi_master::Init();
+ 
   portExtender::Init();
 
   Display::Init();
   Display::Refresh();
+  
+  /* debug
+  for(int i=0; i<1000; i++)
+  {
+    Display::Refresh();
+    _delay_ms(1);
+  }
+  */
 }
 
 #endif

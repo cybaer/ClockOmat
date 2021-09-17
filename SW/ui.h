@@ -1,7 +1,7 @@
 /*
  * ui.h
  *
- *  Created on: 21.05.2020
+ *  Created on: 21.08.2020
  *      Author: cybaer
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,91 +19,125 @@
 #ifndef UI_H_
 #define UI_H_
 
+#include"Divider.h"
 #include "HardwareConfig.h"
 
 using namespace avrlib;
 class Ui
 {
 public:
-  //Ui(void);
+  Ui(void);
   void init();
   void poll();
   void doEvents();
+  void update();
   void onClock();
 
 private:
+  int16_t setBPM(int8_t xcr);
+  int16_t getBPM() { return m_BPM; }
+
+  
+  bool m_NewClock;
+  int8_t m_Xcrement;
   int8_t m_AdcChannel;
-  int8_t m_Tempo;
-  int8_t m_Mode;
-  int8_t m_204;
-  int8_t m_BpmOffset;
+  int8_t m_Button;
   bool m_Stop;
-};
+  int16_t m_BPM;
 
-class DividerFarm;
-class Divider
-{
+  Divider* m_ActualDivider;
+  
+  class IUiState
+  {
   public:
-  Divider(uint8_t divider);
+    //** Empty Constructor */
+    IUiState(void) {}
+    virtual void onEntry(Ui&) const {}
+    virtual void onExit(Ui&) const {}
+    virtual void onClick(Ui&) const {}
+    virtual void onLongClick(Ui&) const {}
+    virtual void onXcrement(Ui&, int8_t xcrement) const {}
+    virtual void onTimeout(Ui&) const {}
 
-  void reset()
+  private:
+    DISALLOW_COPY_AND_ASSIGN (IUiState);
+  };
+  
+  /**
+   * State machine
+   */
+  class CInitState: public IUiState
   {
-    m_Counter = 0;
-    m_OldValue = false;
-    m_Output = false;
-  }
-  bool Do(bool in)
-  {
-    if(in != m_OldValue)
+  public:
+    static CInitState& getInstance(void)
     {
-      m_OldValue = in;
-      if(m_Counter-- == 0)
-      {
-        m_Counter = m_Divider - 1;
-        m_Output = !m_Output;
-      }
+      static CInitState s_instance;
+      return s_instance;
     }
-    return m_Output;
-  }
-  bool getValue() { return m_Output; } const
+  };
 
-  uint8_t m_Divider;
-  uint8_t m_Counter;
-  bool m_OldValue;
-  bool m_Output;
-};
-
-class DividerFarm
-{
-  static const int8_t DividerCount = 12;
-  static const int8_t MaxDivider = 16;
-
-public:
-  static void registerDivider(Divider* div)
+  class CClockState: public IUiState
   {
-    if(m_Counter < MaxDivider)
+  public:
+    static CClockState& getInstance(void)
     {
-      m_Divider[m_Counter] = div;
-      m_Counter++;
+      static CClockState s_instance;
+      return s_instance;
     }
-  }
-  static void reset(void)
+    virtual void onEntry(Ui&) const;
+    virtual void onExit(Ui&) const;
+    virtual void onClick(Ui&) const;
+    virtual void onXcrement(Ui&, int8_t xcrement) const;
+  };
+  class CClockEditState: public IUiState
   {
-      for(int8_t i=0; i<m_Counter; i++)
-      {
-        (void)m_Divider[i]->reset();
-      }
-    }
-  static void clock(bool in)
-  {
-    for(int8_t i=0; i<m_Counter; i++)
+  public:
+    static CClockEditState& getInstance(void)
     {
-      (void)m_Divider[i]->Do(in);
+      static CClockEditState s_instance;
+      return s_instance;
     }
+    virtual void onEntry(Ui&) const;
+    virtual void onExit(Ui&) const;
+    virtual void onClick(Ui&) const;
+    virtual void onXcrement(Ui&, int8_t xcrement) const;
+  };
+
+  class CDividerState: public IUiState
+  {
+  public:
+    static CDividerState& getInstance(void)
+    {
+      static CDividerState s_instance;
+      return s_instance;
+    }
+    virtual void onEntry(Ui&) const;
+    virtual void onExit(Ui&) const;
+    virtual void onClick(Ui&) const;
+    virtual void onXcrement(Ui&, int8_t xcrement) const;
+  };
+  class CDividerEditState: public IUiState
+  {
+  public:
+    static CDividerEditState& getInstance(void)
+    {
+      static CDividerEditState s_instance;
+      return s_instance;
+    }
+    virtual void onEntry(Ui&) const;
+    virtual void onExit(Ui&) const;
+    virtual void onClick(Ui&) const;
+    virtual void onXcrement(Ui&, int8_t xcrement) const;
+  };
+  
+  void setState(IUiState& state)
+  {
+    m_State->onExit(*this);
+    m_State = &state;
+    m_State->onEntry(*this);
   }
-private:
-  static Divider* m_Divider[MaxDivider];
-  static int8_t m_Counter;
+  
+  IUiState* m_State;
 };
 
 extern Ui ui;

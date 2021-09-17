@@ -24,6 +24,7 @@
 #include "HardwareConfig.h"
 #include "clock.h"
 #include "ui.h"
+#include "Divider.h"
 
 // __Compiler Bug__
 int __cxa_guard_acquire(__guard *g) {return !*(char *)(g);};
@@ -35,6 +36,15 @@ void __cxa_pure_virtual() {};
 volatile uint8_t num_clock_ticks = 0;
 volatile bool poll = false;
 Ui ui;
+
+DividerFarm dividerFarm;
+Divider Div1(Output_1::set_value);
+Divider Div2(Output_2::set_value, 2);
+Divider Div3(Output_3::set_value, 3);
+Divider Div4(Output_4::set_value, 4);
+Divider Div5(Output_5::set_value, 5);
+Divider Div6(Output_6::set_value, 6);
+//Divider Div7(Output_7::set_value);
 
 ISR(TIMER1_COMPA_vect)
 {
@@ -53,11 +63,12 @@ ISR(TIMER2_OVF_vect, ISR_NOBLOCK)
     --num_clock_ticks;
     ui.onClock();
   }
+
   static int8_t subClock = 0;
-  subClock = (subClock + 1) & 3;
+  subClock = (subClock + 1) & 1;
 
   if (subClock == 0)
-  { // 1kHz
+  { // 2kHz
     poll = true;
   }
 }
@@ -66,16 +77,14 @@ ISR(TIMER2_OVF_vect, ISR_NOBLOCK)
 int main(void)
 {
   // Configure the timers.
-    static const uint8_t PRESCALER = 3;
-    static const uint8_t PRESCALER_VALUE = 64;
+    
     //PWM with CTC
     Timer<1>::set_mode(0, _BV(WGM12), PRESCALER);
-    int16_t startFreq = 1024;
-    int16_t counterForStartFreq = (16000000L / PRESCALER_VALUE) / startFreq -1;
+    int16_t startFreq = 2000;
+    int16_t counterForStartFreq = (F_CPU / PRESCALER_VALUE) / startFreq -1;
     PwmChannel1A::set_frequency(counterForStartFreq);
     Timer<1>::StartCompare();
     //TIMSK |= (1<<OCIE1A);
-
 
     Timer<2>::set_prescaler(2);
     Timer<2>::set_mode(TIMER_PWM_PHASE_CORRECT);
@@ -90,15 +99,15 @@ int main(void)
   initHW();
   _delay_ms(50);
 
+  
   while(1)
   {
-    static uint8_t step = 3;
     if(poll)
     {
       poll = false;
       ui.poll();
       ui.doEvents();
     }
-    ui.doEvents();
+    ui.update();
   }
 }
