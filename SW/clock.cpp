@@ -19,7 +19,7 @@
 #include "clock.h"
 
 Clock clock;
-static const int32_t BPM2HZ = 60L;
+static const int32_t BPM2HZ = 60L * static_cast<uint32_t>(Resolution) / 4L;
 bool Clock::m_Running = true;
 volatile uint16_t Clock::m_TickCount = 0;
 uint16_t Clock::m_OldTick = 0;
@@ -29,7 +29,7 @@ uint16_t Clock::m_Interval = (F_CPU / PRESCALER_VALUE / static_cast<uint32_t>(IN
 
 void Clock::update(uint16_t bpm, uint8_t multiplier, uint8_t divider)
 {
-  
-  int32_t base_tick_duration = (F_CPU / PRESCALER_VALUE / 2 /static_cast<uint32_t>(INTERVALL_TICKS)) * (BPM2HZ/4) / static_cast<uint32_t>(bpm) ;
+  //                                                      |-- 1 period --> 2 toggle
+  int32_t base_tick_duration = (F_CPU / PRESCALER_VALUE / 2 /static_cast<uint32_t>(INTERVALL_TICKS)) * BPM2HZ / static_cast<uint32_t>(bpm) ;
   m_Interval = base_tick_duration;
 }

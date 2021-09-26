@@ -24,13 +24,13 @@
 #include "HardwareConfig.h"
 
 //Settings for timer1 (16bit timer)
-static const uint8_t PRESCALER = 3;
-static const uint16_t PRESCALER_VALUE = 64L;
+static const uint8_t PRESCALER = 1;
+static const uint16_t PRESCALER_VALUE = 1L;
 
 
 using namespace avrlib;
-static const uint8_t INTERVALL_TICKS = 1;
-static const uint8_t Resolution = 1;
+static const uint16_t INTERVALL_TICKS = 256;
+static const uint8_t Resolution = 2;
 
 class Clock
 {
@@ -68,7 +68,7 @@ public:
     // INTERVALL_TICKS from Clock to Clock
     uint16_t deltaTick = newTick - m_OldTick;
     uint32_t numerator = static_cast<uint32_t>(m_Interval) * deltaTick;
-    volatile uint16_t interval = numerator / INTERVALL_TICKS;
+    volatile uint16_t interval = (numerator + INTERVALL_TICKS / 2) / INTERVALL_TICKS;
     // safety copy of 16 bit
     cli();
     m_Interval = interval;
