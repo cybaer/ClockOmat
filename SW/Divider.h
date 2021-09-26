@@ -33,8 +33,8 @@ constexpr int32_t lcm(int32_t m, int32_t n)
     return (m / gcd(m,n) * n); 
 }
 
-static const auto DIV_COUNT = 19;
-static constexpr int32_t DIVIDER[DIV_COUNT] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20,24,32};
+static const auto DIV_COUNT = 21;
+static constexpr int32_t DIVIDER[DIV_COUNT] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20,24,32,64,128};
 
 constexpr auto DividerLCM()
 {
@@ -57,14 +57,14 @@ public:
   Divider(setIOFct output, uint8_t div=1);
   void reset();
   void clock(bool in, const int32_t& count);
-  uint8_t setDividerIndex(uint8_t idx);
-  uint8_t getDividerIndex() const { return m_DividerIndex; }
+  uint8_t setDividerIndex(int8_t idx);
+  int8_t getDividerIndex() const { return m_DividerIndex; }
   uint8_t getDivider() const { return m_Divider; }
   
 private:
   setIOFct setOutput;
-  uint8_t m_Divider;
-  uint8_t m_DividerIndex;
+  int8_t m_Divider;
+  int8_t m_DividerIndex;
   int32_t m_NextCounter;
   bool m_OldValue;
   bool m_Output;

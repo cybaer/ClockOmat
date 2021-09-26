@@ -53,7 +53,7 @@ void Divider::clock(bool in, const int32_t& count)
   setOutput(m_Output);
 }
 
-uint8_t Divider::setDividerIndex(uint8_t idx)
+uint8_t Divider::setDividerIndex(int8_t idx)
 {
   m_DividerIndex = idx;
   m_Divider = DIVIDER[idx];

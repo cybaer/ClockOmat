@@ -15,10 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include <avr/eeprom.h>
 #include "avrlib/op.h"
 #include "ui.h"
 #include "clock.h"
+
+struct DividerData
+{
+  uint16_t Bpm;
+  uint8_t Divider[7];
+};
+
+DividerData EEMEM eeData;
+DividerData Data = {123};
 
 Ui::Ui()
 : m_NewClock(false)
@@ -34,6 +43,10 @@ void Ui::init()
 {
   m_Stop = false;
   Adc::StartConversion(m_AdcChannel);
+  
+
+  //eeprom_write_block(&Data, &eeData, sizeof(Data)); 
+  
   setState(CClockState::getInstance());
 }
 
@@ -92,7 +105,7 @@ void Ui::onClock()
   m_NewClock = true;
 }
 
-int16_t Ui::setBPM(int8_t xcr)
+int16_t Ui::xcrementBPM(int8_t xcr)
 {
   m_BPM += xcr;
   if(m_BPM < 30) m_BPM = 30;
@@ -105,6 +118,18 @@ int16_t Ui::setBPM(int8_t xcr)
 
 void Ui::CClockState::onEntry(Ui& context) const
 {
+  // read values from EEPROM
+  /// ToDo: check version of data
+  eeprom_read_block((void*)&Data, &eeData, sizeof(Data));
+  
+  context.setBPM(Data.Bpm);
+  Divider *div = &dividerFarm.setFirstDivider();
+  for(int8_t i=0; i<6; i++)
+  {
+    div->setDividerIndex(Data.Divider[i]);
+    div = &dividerFarm.setNextDivider();
+  }
+
   Display::Print("Clc");
 }
 
@@ -136,7 +161,7 @@ void Ui::CClockEditState::onEntry(Ui& context) const
 
 void Ui::CClockEditState::onExit(Ui& context) const
 {
-
+  eeprom_write_block(&Data, &eeData, sizeof(Data));  
 }
 void Ui::CClockEditState::onClick(Ui& context) const
 {
@@ -145,7 +170,8 @@ void Ui::CClockEditState::onClick(Ui& context) const
 
 void Ui::CClockEditState::onXcrement(Ui& context, int8_t xcrement) const
 {
-  int16_t bpm = context.setBPM(xcrement);
+  int16_t bpm = context.xcrementBPM(xcrement);
+  Data.Bpm = bpm;
   Display::Print(bpm);
 }
 
@@ -191,12 +217,14 @@ void Ui::CDividerState::onXcrement(Ui& context, int8_t xcrement) const
 
 void Ui::CDividerEditState::onEntry(Ui& context) const
 {
+  Display::setDPs(dividerFarm.getDividerNo());
   Display::Print(dividerFarm.getActualDivider().getDivider());
 }
 
 void Ui::CDividerEditState::onExit(Ui& context) const
 {
-  
+  Display::resetAllDP();
+  eeprom_write_block(&Data, &eeData, sizeof(Data));
 }
 
 void Ui::CDividerEditState::onClick(Ui& context) const
@@ -210,7 +238,10 @@ void Ui::CDividerEditState::onXcrement(Ui& context, int8_t xcrement) const
   auto idx = div.getDividerIndex();
   /// ToDo: Begrenzung einbauen!
   idx += xcrement;
+  if(idx < 0) idx = 0;
+  if(idx >= DIV_COUNT) idx = DIV_COUNT - 1;
   
   auto val = div.setDividerIndex(idx);
   Display::Print(val);
+  Data.Divider[dividerFarm.getDividerNo()-1] = idx;
 }

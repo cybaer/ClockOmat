@@ -34,7 +34,8 @@ public:
   void onClock();
 
 private:
-  int16_t setBPM(int8_t xcr);
+  int16_t setBPM(int16_t bpm) { m_BPM = bpm; };
+  int16_t xcrementBPM(int8_t xcr);
   int16_t getBPM() { return m_BPM; }
 
   

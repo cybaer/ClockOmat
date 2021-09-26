@@ -55,7 +55,7 @@ typedef Inverter<Gpio<PortB, 1> > Digit_3;
 
 constexpr auto encChar = EncodedCharacters<5, 7, 0, 3, 4, 6, 1>(); 
 
-typedef Display_7_Seg<portExtender, 3, Digit_1::set_value, Digit_2::set_value, Digit_3::set_value> Display;
+typedef Display_7_Seg<portExtender, 3, 0x4, Digit_1::set_value, Digit_2::set_value, Digit_3::set_value> Display;
 
 // Inputs
 typedef EdgeTrigger<Gpio<PortD, 2>, 0> ClockIn;
@@ -131,6 +131,7 @@ inline void initHW(void)
   portExtender::Init();
 
   Display::Init();
+  Display::setBrightness(2);
   Display::Refresh();
   
   /* debug

@@ -29,7 +29,7 @@ SYSEX_FLAGS    = --page_size=64 --device_id=3
 EXTRA_DEFINES  = -std=c++14
 
 LFUSE          = ff
-HFUSE          = d9
+HFUSE          = d1
 EFUSE          = fD
 LOCK           = ff
 
